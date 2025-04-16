@@ -1,8 +1,9 @@
-const { AuthenticationError } = require('apollo-server-express')
-const { User, Post } = require('./models')
-const { signToken } = require('../utils/auth')
+import { AuthenticationError } from 'apollo-server-express'
+import User from './models/User.js'
+import Post from './models/Post.js'
+import { signToken } from './utils/auth.js'
 
-const resolvers = {
+ export const resolvers = {
   Query: {
     me: async (_, __, context) => {
       if (!context.user) throw new AuthenticationError('Not logged in')
@@ -30,4 +31,4 @@ const resolvers = {
   },
 }
 
-module.exports = resolvers
+
