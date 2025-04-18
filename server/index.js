@@ -3,22 +3,17 @@ import express from 'express'
 import mongoose from 'mongoose'
 import { ApolloServer } from 'apollo-server-express'
 import cors from 'cors'
+import jwt from 'jsonwebtoken'
 import path from 'path'
 import { fileURLToPath } from 'url'
-
-// Import typeDefs and resolvers properly
-import { typeDefs } from './typeDefs.js' // Changed from .graphql to .js
+import { typeDefs } from './typeDefs.js'
 import { resolvers } from './resolvers.js'
 
-// ES Modules equivalent for __dirname
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-// Load environment variables
 dotenv.config()
 
-// DB Connection
-console.log('Connecting to MongoDB...')
 mongoose
   .connect(process.env.MONGODB_URI)
   .then(() => console.log('✅ MongoDB connected'))
@@ -27,35 +22,59 @@ mongoose
     process.exit(1)
   })
 
-// Express Setup
 const app = express()
-app.use(cors({ origin: 'http://localhost:3000' }))
+app.use(cors({ origin: 'http://localhost:3000', credentials: true }))
 app.use(express.json())
 
-// Health Check
+//Test
+app.get('/test', (req, res) => {
+  res.send('✅ Express is alive')
+})
+
 app.get('/health', (req, res) => res.send('OK'))
 
 const startServer = async () => {
-  const apolloServer = new ApolloServer({
-    typeDefs, // Now using the imported typeDefs
-    resolvers,
-    context: ({ req }) => ({ req }),
-  })
+  try {
+    const apolloServer = new ApolloServer({
+      typeDefs,
+      resolvers,
+      context: ({ req }) => {
+        const authHeader = req.headers.authorization || ''
+        const token = authHeader.replace('Bearer ', '')
 
-  await apolloServer.start()
-  apolloServer.applyMiddleware({
-    app,
-    path: '/graphql',
-    cors: false, // CORS is already handled by express middleware
-  })
+        if (!token) return {}
 
-  const port = process.env.PORT || 4000
-  app.listen(port, () => {
-    console.log(`🚀 Server running on http://localhost:${port}`)
-    console.log(
-      `GraphQL at http://localhost:${port}${apolloServer.graphqlPath}`
-    )
-  })
+        try {
+          const user = jwt.verify(token, process.env.JWT_SECRET)
+          return { user }
+        } catch (error) {
+          console.error('JWT Error:', error.message)
+          return {}
+        }
+      },
+    })
+
+    await apolloServer.start()
+    console.log('✅ ApolloServer started') // 👈 add this log
+
+    apolloServer.applyMiddleware({
+      app,
+      path: '/graphql',
+      cors: false,
+    })
+
+    const port = process.env.PORT || 4000
+    const host = '0.0.0.0'
+
+    app.listen(port, host, () => {
+      console.log(`🚀 Server running on http://${host}:${port}`)
+      console.log(
+        `🔗 GraphQL available at http://${host}:${port}${apolloServer.graphqlPath}`
+      )
+    })
+  } catch (err) {
+    console.error('❌ Apollo Server startup failed:', err)
+  }
 }
 
 startServer().catch((err) => console.error('Server startup failed:', err))

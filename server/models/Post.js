@@ -41,19 +41,16 @@ const PostSchema = new mongoose.Schema(
     },
   },
   {
-    timestamps: true, // Adds createdAt and updatedAt automatically
-    toJSON: { virtuals: true }, // Include virtuals when converted to JSON
+    timestamps: true,
+    toJSON: { virtuals: true },
     toObject: { virtuals: true },
   }
 )
 
-// Add text index for search functionality
 PostSchema.index({ content: 'text' })
 
-// Virtual for comment count
 PostSchema.virtual('commentCount').get(function () {
   return this.comments.length
 })
 
-const Post = mongoose.model('Post', PostSchema)
-export default Post
+export default mongoose.model('Post', PostSchema)

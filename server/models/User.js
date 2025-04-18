@@ -1,4 +1,5 @@
 import mongoose from 'mongoose'
+import bcrypt from 'bcryptjs'
 
 const UserSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
@@ -6,5 +7,10 @@ const UserSchema = new mongoose.Schema({
   password: { type: String, required: true },
   posts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Post' }],
 })
+
+// Add password comparison method
+UserSchema.methods.isCorrectPassword = async function (password) {
+  return bcrypt.compare(password, this.password)
+}
 
 export default mongoose.model('User', UserSchema)
