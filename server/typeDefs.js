@@ -6,6 +6,7 @@ export const typeDefs = gql`
     username: String!
     email: String!
     posts: [Post]
+    savedPosts: [Post]
   }
 
   type Post {
@@ -14,6 +15,7 @@ export const typeDefs = gql`
     author: User!
     likes: Int
     comments: [Comment]
+    savedBy: [User]
     createdAt: String
   }
 
@@ -21,6 +23,7 @@ export const typeDefs = gql`
     _id: ID!
     text: String!
     author: User!
+    likes: Int
     createdAt: String
   }
 
@@ -48,5 +51,10 @@ export const typeDefs = gql`
 
     addComment(postId: ID!, text: String!): Comment
     deleteComment(postId: ID!, commentId: ID!): Message
+    likeComment(postId: ID!, commentId: ID!): Comment
+
+    likePost(postId: ID!): Post
+    savePost(postId: ID!): Post
+    unsavePost(postId: ID!): Post
   }
 `

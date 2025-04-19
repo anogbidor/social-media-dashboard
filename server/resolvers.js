@@ -80,6 +80,7 @@ export const resolvers = {
         text,
         author: context.user.id,
         createdAt: new Date(),
+        likes: 0,
       }
 
       const updatedPost = await Post.findByIdAndUpdate(
@@ -106,5 +107,62 @@ export const resolvers = {
       await post.save()
       return { message: 'Comment deleted successfully' }
     },
+
+    likeComment: async (_, { postId, commentId }, context) => {
+      if (!context.user) throw new AuthenticationError('Not logged in')
+
+      const post = await Post.findById(postId)
+      if (!post) throw new Error('Post not found')
+
+      const comment = post.comments.id(commentId)
+      if (!comment) throw new Error('Comment not found')
+
+      comment.likes = (comment.likes || 0) + 1
+      await post.save()
+      return comment
+    },
+
+    likePost: async (_, { postId }, context) => {
+      if (!context.user) throw new AuthenticationError('Not logged in')
+
+      const post = await Post.findById(postId)
+      if (!post) throw new Error('Post not found')
+
+      post.likes = (post.likes || 0) + 1
+      await post.save()
+
+      await post.populate('author')
+      await post.populate('comments.author')
+
+      return post
+    },
+
+    savePost: async (_, { postId }, context) => {
+      if (!context.user) throw new AuthenticationError('Not logged in')
+
+      const user = await User.findById(context.user.id)
+      if (!user.savedPosts.includes(postId)) {
+        user.savedPosts.push(postId)
+        await user.save()
+      }
+
+      return Post.findById(postId)
+        .populate('author')
+        .populate('comments.author')
+    },
+
+    unsavePost: async (_, { postId }, context) => {
+      if (!context.user) throw new AuthenticationError('Not logged in')
+
+      const user = await User.findById(context.user.id)
+      user.savedPosts = user.savedPosts.filter((id) => id.toString() !== postId)
+      await user.save()
+
+      return Post.findById(postId)
+        .populate('author')
+        .populate('comments.author')
+    },
   },
 }
+
+export default resolvers

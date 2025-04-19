@@ -33,6 +33,11 @@ const PostSchema = new mongoose.Schema(
           type: Date,
           default: Date.now,
         },
+        likes: {
+          type: Number,
+          default: 0, 
+          min: 0,
+        },
       },
     ],
     createdAt: {
